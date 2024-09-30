@@ -1,0 +1,191 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_Cylinder" Id="{8963c953-2c3d-47ab-94f0-dea084a31961}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_Cylinder
+VAR_INPUT
+    Start: BOOL;                // Start signal
+    Extend: BOOL;               // Extend signal
+    Retract: BOOL;              // Retract signal
+    SensorExtended: BOOL;       // Feedback from fully extended position sensor
+    SensorRetracted: BOOL;      // Feedback from fully retracted position sensor
+    EmergencyStop: BOOL;        // Emergency stop signal
+    ExtendTime: TIME := T#5S;   // Time allowed to fully extend
+    RetractTime: TIME := T#5S;  // Time allowed to fully retract
+END_VAR
+
+VAR_OUTPUT
+    Error: BOOL;            // Error flag
+    ErrorCode: INT;         // Error code for different fault conditions
+END_VAR
+
+VAR
+    State: INT := 0;        // State variable for the state machine
+    Timer: TON;             // Timer instance for timeouts
+    _ExtendValve: BOOL;      // Valve output to extend the cylinder
+    _RetractValve: BOOL;     // Valve output to retract the cylinder
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[	
+	
+	// State Machine Logic
+	CASE State OF
+		0: // Idle
+			_ExtendValve := FALSE;
+			_RetractValve := FALSE;
+			Error := FALSE;
+			ErrorCode := 0;
+			
+			IF EmergencyStop THEN
+				State := 7; // Go to emergency stop state
+			ELSIF Start THEN
+				IF (Extend AND Retract) THEN
+					Error := TRUE;
+					ErrorCode := 1; // Invalid input (simultaneous Extend and Retract)
+					State := 5; // Go to error state
+				ELSIF Extend THEN
+					IF NOT SensorExtended THEN
+						State := 1; // Go to extend state if not already extended
+					ELSE
+						Error := TRUE;
+						ErrorCode := 2; // Attempt to extend when already extended
+						State := 5; // Go to error state
+					END_IF
+				ELSIF Retract THEN
+					IF NOT SensorRetracted THEN
+						State := 3; // Go to retract state if not already retracted
+					ELSE
+						Error := TRUE;
+						ErrorCode := 3; // Attempt to retract when already retracted
+						State := 5; // Go to error state
+					END_IF
+				END_IF
+			END_IF
+		
+		1: // Extending
+			_ExtendValve := TRUE;
+			_RetractValve := FALSE;
+			
+			IF EmergencyStop THEN
+				State := 7; // Go to emergency stop state
+			ELSIF SensorExtended THEN
+				State := 2; // Cylinder fully extended
+			ELSE
+				Timer(IN := TRUE, PT := ExtendTime); // Start timer for extension
+				IF Timer.Q THEN
+					Error := TRUE; // Timeout error
+					ErrorCode := 4; // Failed to extend in time
+					State := 5; // Go to error state
+				END_IF
+			END_IF
+		
+		2: // Extended
+			_ExtendValve := FALSE;
+			_RetractValve := FALSE;
+			
+			IF EmergencyStop THEN
+				State := 7; // Go to emergency stop state
+			ELSIF NOT Start THEN
+				State := 0; // Return to Idle state when Start signal is released
+			ELSIF Retract THEN
+				IF NOT SensorRetracted THEN
+					State := 3; // Go to retract state if not already retracted
+				ELSE
+					Error := TRUE;
+					ErrorCode := 3; // Attempt to retract when already retracted
+					State := 5; // Go to error state
+				END_IF
+			ELSIF (NOT SensorExtended AND NOT SensorRetracted) THEN
+				State := 6; // Transition to stuck state if both sensors are off
+			END_IF
+		
+		3: // Retracting
+			_ExtendValve := FALSE;
+			_RetractValve := TRUE;
+			
+			IF EmergencyStop THEN
+				State := 7; // Go to emergency stop state
+			ELSIF SensorRetracted THEN
+				State := 4; // Cylinder fully retracted
+			ELSE
+				Timer(IN := TRUE, PT := RetractTime); // Start timer for retraction
+				IF Timer.Q THEN
+					Error := TRUE; // Timeout error
+					ErrorCode := 5; // Failed to retract in time
+					State := 5; // Go to error state
+				END_IF
+			END_IF
+		
+		4: // Retracted
+			_ExtendValve := FALSE;
+			_RetractValve := FALSE;
+			
+			IF EmergencyStop THEN
+				State := 7; // Go to emergency stop state
+			ELSIF NOT Start THEN
+				State := 0; // Return to Idle state when Start signal is released
+			ELSIF Extend THEN
+				IF NOT SensorExtended THEN
+					State := 1; // Go to extend state if not already extended
+				ELSE
+					Error := TRUE;
+					ErrorCode := 2; // Attempt to extend when already extended
+					State := 5; // Go to error state
+				END_IF
+			ELSIF (NOT SensorExtended AND NOT SensorRetracted) THEN
+				State := 6; // Transition to stuck state if both sensors are off
+			END_IF
+		
+		5: // Error
+			_ExtendValve := FALSE;
+			_RetractValve := FALSE;
+			Error := TRUE;
+			
+			IF EmergencyStop THEN
+				State := 7; // Go to emergency stop state
+			ELSIF NOT Start THEN
+				State := 0; // Return to Idle state
+				Error := FALSE; // Reset error flag
+				ErrorCode := 0; // Clear error code
+			END_IF
+		
+		6: // Stuck in-between state
+			_ExtendValve := FALSE;
+			_RetractValve := FALSE;
+			Error := TRUE;
+			
+			Timer(IN := TRUE, PT := T#10S); // 10-second stuck detection
+			IF Timer.Q THEN
+				ErrorCode := 6; // Cylinder stuck between positions
+				State := 5; // Go to error state
+			END_IF
+			
+			IF EmergencyStop THEN
+				State := 7; // Go to emergency stop state
+			ELSIF Extend THEN
+				IF NOT SensorExtended THEN
+					State := 1; // Go to extend state
+				END_IF
+			ELSIF Retract THEN
+				IF NOT SensorRetracted THEN
+					State := 3; // Go to retract state
+				END_IF
+			END_IF
+		
+		7: // Emergency stop state
+			_ExtendValve := FALSE;     // Stop any motion immediately
+			_RetractValve := FALSE;
+			Error := TRUE;            // Signal an error
+			ErrorCode := 7;           // Emergency stop error code
+			
+			// Stay in emergency state until EmergencyStop is cleared
+			IF NOT EmergencyStop THEN
+				State := 0; // Return to Idle state after emergency is cleared
+				Error := FALSE;       // Clear error
+				ErrorCode := 0;       // Clear error code
+			END_IF
+	END_CASE
+
+	]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

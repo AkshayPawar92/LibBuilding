@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="PRG_Testing" Id="{846b9b0a-8fb3-44f9-b14b-f63cf37aa023}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM PRG_Testing
+VAR
+	fbCylinder_DoubleActing: FB_Cylinder_DoubleActing;
+	fbCylinder_SingleActing: FB_Cylinder_SingleActing;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+	fbCylinder_SingleActing(
+	Start:= , 
+	Extend:= , 
+	Retract:= , 
+	SensorExtended:= , 
+	SensorRetracted:= , 
+	EmergencyStop:= , 
+	ExtendTime:= , 
+	RetractTime:= , 
+	Error=> , 
+	ErrorCode=> , 
+	Extend_RetractValve=> );
+	
+	fbCylinder_DoubleActing(
+	Start:= , 
+	Extend:= , 
+	Retract:= , 
+	SensorExtended:= , 
+	SensorRetracted:= , 
+	EmergencyStop:= , 
+	ExtendTime:= , 
+	RetractTime:= , 
+	Error=> , 
+	ErrorCode=> , 
+	ExtendValve=> , 
+	RetractValve=> );]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

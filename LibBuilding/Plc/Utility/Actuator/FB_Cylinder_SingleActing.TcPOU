@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_Cylinder_SingleActing" Id="{3e3d190a-395f-4187-bc33-56f342944ff0}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_Cylinder_SingleActing EXTENDS FB_Cylinder
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+	Extend_RetractValve: BOOL;	// 1: Valve output to extend the cylinder | 0: Valve output to retract the cylinder
+END_VAR
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+	IF _ExtendValve AND (NOT _RetractValve) THEN
+		Extend_RetractValve	:=	TRUE;
+	ELSIF (NOT _ExtendValve) AND _RetractValve THEN
+		Extend_RetractValve	:=	FALSE;
+	ELSE
+		Extend_RetractValve	:=	FALSE;
+	END_IF
+	]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

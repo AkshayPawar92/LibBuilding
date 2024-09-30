@@ -24,10 +24,31 @@
     <Compile Include="POUs\MAIN.TcPOU">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="POUs\PRG_Testing.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Utility\Actuator\FB_Cylinder.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Utility\Actuator\FB_Cylinder_DoubleActing.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Utility\Actuator\FB_Cylinder_SingleActing.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Utility\Sensor\FB_Sensor_NC.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Utility\Sensor\FB_Sensor_NO.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="DUTs" />
     <Folder Include="GVLs" />
+    <Folder Include="Utility" />
+    <Folder Include="Utility\Actuator" />
+    <Folder Include="Utility\Sensor" />
     <Folder Include="VISUs" />
     <Folder Include="POUs" />
   </ItemGroup>
@@ -44,6 +65,14 @@
       <DefaultResolution>Tc3_Module, * (Beckhoff Automation GmbH)</DefaultResolution>
       <Namespace>Tc3_Module</Namespace>
     </PlaceholderReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Plc.tmc">
+      <SubType>Content</SubType>
+    </None>
+    <Content Include="ToDo.txt">
+      <SubType>Content</SubType>
+    </Content>
   </ItemGroup>
   <ProjectExtensions>
     <PlcProjectOptions>

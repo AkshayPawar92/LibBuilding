@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_Cylinder_DoubleActing" Id="{1da19082-466a-4306-bd1b-4bd5ce388c95}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_Cylinder_DoubleActing EXTENDS FB_Cylinder
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+    ExtendValve: BOOL;      // Valve output to extend the cylinder
+    RetractValve: BOOL;     // Valve output to retract the cylinder	
+END_VAR
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+	ExtendValve		:=	_ExtendValve;
+	RetractValve	:=	_RetractValve;
+	]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>
